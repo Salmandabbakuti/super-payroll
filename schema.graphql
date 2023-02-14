@@ -1,0 +1,51 @@
+type Employee @entity {
+  id: ID!
+  name: String! # string
+  age: Int! # uint8
+  contactAddress: String! # string
+  country: String! # string
+  walletAddress: Bytes! # address
+  status: EmployeeStatus! # enum
+  employer: Bytes! # address
+  updatedAt: BigInt!
+}
+
+type Stream @entity {
+  id: ID!
+  sender: String!
+  receiver: String!
+  token: String!
+  flowRate: BigInt!
+  status: StreamStatus!
+  txHash: String!
+  createdAt: BigInt!
+  updatedAt: BigInt!
+}
+
+enum StreamStatus {
+  CREATED
+  UPDATED 
+  TERMINATED
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+}
+
+type StreamRevision @entity {
+    """
+    ID composed of: keccak256(abi.encode(sender,receiver))-tokenAddress
+    """
+    id: ID!
+    revisionIndex: Int!
+    periodRevisionIndex: Int!
+
+    """
+    The "most recently alive" stream between a sender and receiver.
+    Note: The `revisionIndex` property may not be the same as the `revisionIndex` of `mostRecentStream`. Which means `mostRecentStream` has been closed and no new stream has been opened.
+    """
+    mostRecentStream: Stream!
+}
+

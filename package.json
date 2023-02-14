@@ -1,0 +1,29 @@
+{
+  "name": "hardhat-boilerplate",
+  "version": "1.0.0",
+  "description": "hardhat and ethersjs minimal boilerplate for Dapp development",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx hardhat test",
+    "compile:contracts": "npx hardhat compile",
+    "deploy:contracts": "npx hardhat deploy",
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ salmandabbakuti/super-payroll",
+    "create-local": "graph create --node http://localhost:8020/ salmandabbakuti/super-payroll",
+    "remove-local": "graph remove --node http://localhost:8020/ salmandabbakuti/super-payroll",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 salmandabbakuti/super-payroll"
+  },
+  "keywords": [],
+  "author": "Salman Dabbakuti",
+  "license": "ISC",
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.39.0",
+    "@graphprotocol/graph-ts": "0.29.1"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.1",
+    "@superfluid-finance/ethereum-contracts": "^1.5.0",
+    "hardhat": "^2.12.6"
+  }
+}

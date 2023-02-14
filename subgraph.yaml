@@ -1,0 +1,30 @@
+specVersion: 0.0.5
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SuperPayroll
+    network: gnosis
+    source:
+      address: "0xaE61560Ba3A62B7bbC313EF8eAECa28e717ff443"
+      abi: SuperPayroll
+      startBlock: 26469759
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.7
+      language: wasm/assemblyscript
+      entities:
+        - Employee
+        - Stream
+        - StreamRevision
+      abis:
+        - name: SuperPayroll
+          file: ./abis/SuperPayroll.json
+      eventHandlers:
+        - event: EmployeeAdded(uint256,string,uint8,string,string,address,address)
+          handler: handleEmployeeAdded
+        - event: EmployeeDeleted(uint256,address,address)
+          handler: handleEmployeeDeleted
+        - event: FlowUpdated(address,address,address,int96)
+          handler: handleFlowUpdated
+      file: ./src/super-payroll.ts
