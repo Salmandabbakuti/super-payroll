@@ -21,7 +21,7 @@ contract SuperPayroll {
         uint8 age;
         string contactAddress;
         string country;
-        address walletAddress;
+        address addr;
         address employer;
         bool isExists;
     }
@@ -39,11 +39,11 @@ contract SuperPayroll {
         uint8 age,
         string contactAddress,
         string country,
-        address walletAddress,
+        address addr,
         address employer
     );
 
-    event EmployeeDeleted(uint256 id, address walletAddress, address employer);
+    event EmployeeDeleted(uint256 id, address addr, address employer);
     event FlowUpdated(
         address token,
         address sender,
@@ -59,8 +59,8 @@ contract SuperPayroll {
         _;
     }
 
-    modifier employeeExists(address _walletAddress) {
-        require(employees[_walletAddress].isExists, "Employee does not exist");
+    modifier employeeExists(address _addr) {
+        require(employees[_addr].isExists, "Employee does not exist");
         _;
     }
 
@@ -69,19 +69,19 @@ contract SuperPayroll {
         uint8 _age,
         string memory _contactAddress,
         string memory _country,
-        address _walletAddress
+        address _addr
     ) public onlyEmployer {
         // employee must not exist
-        require(!employees[_walletAddress].isExists, "Employee already exists");
+        require(!employees[_addr].isExists, "Employee already exists");
 
         // add employee to mapping
-        employees[_walletAddress] = Employee(
+        employees[_addr] = Employee(
             employeeCount,
             _name,
             _age,
             _contactAddress,
             _country,
-            _walletAddress,
+            _addr,
             employer,
             true
         );
@@ -93,7 +93,7 @@ contract SuperPayroll {
             _age,
             _contactAddress,
             _country,
-            _walletAddress,
+            _addr,
             employer
         );
 
@@ -102,17 +102,13 @@ contract SuperPayroll {
     }
 
     function deleteEmployee(
-        address _walletAddress
-    ) public onlyEmployer employeeExists(_walletAddress) {
+        address _addr
+    ) public onlyEmployer employeeExists(_addr) {
         // delete employee from mapping
-        delete employees[_walletAddress];
+        delete employees[_addr];
 
         // emit event
-        emit EmployeeDeleted(
-            employees[_walletAddress].id,
-            _walletAddress,
-            employer
-        );
+        emit EmployeeDeleted(employees[_addr].id, _addr, employer);
     }
 
     function createPaymentStream(

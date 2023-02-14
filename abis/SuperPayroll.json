@@ -46,7 +46,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "walletAddress",
+        "name": "addr",
         "type": "address"
       },
       {
@@ -71,7 +71,7 @@
       {
         "indexed": false,
         "internalType": "address",
-        "name": "walletAddress",
+        "name": "addr",
         "type": "address"
       },
       {
@@ -139,7 +139,7 @@
       },
       {
         "internalType": "address",
-        "name": "_walletAddress",
+        "name": "_addr",
         "type": "address"
       }
     ],
@@ -183,7 +183,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "_walletAddress",
+        "name": "_addr",
         "type": "address"
       }
     ],
@@ -242,7 +242,7 @@
       },
       {
         "internalType": "address",
-        "name": "walletAddress",
+        "name": "addr",
         "type": "address"
       },
       {

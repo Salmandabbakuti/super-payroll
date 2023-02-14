@@ -4,9 +4,10 @@ type Employee @entity {
   age: Int! # uint8
   contactAddress: String! # string
   country: String! # string
-  walletAddress: Bytes! # address
+  addr: Bytes! # address
   status: EmployeeStatus! # enum
   employer: Bytes! # address
+  streams: [Stream!]! @derivedFrom(field: "to")
   updatedAt: BigInt!
 }
 
@@ -14,6 +15,7 @@ type Stream @entity {
   id: ID!
   sender: String!
   receiver: String!
+  to: Employee!
   token: String!
   flowRate: BigInt!
   status: StreamStatus!

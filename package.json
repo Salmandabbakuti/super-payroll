@@ -19,7 +19,8 @@
   "license": "ISC",
   "dependencies": {
     "@graphprotocol/graph-cli": "0.39.0",
-    "@graphprotocol/graph-ts": "0.29.1"
+    "@graphprotocol/graph-ts": "0.29.1",
+    "dotenv": "^16.0.3"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.1",

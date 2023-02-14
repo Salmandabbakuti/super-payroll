@@ -89,12 +89,12 @@ export function getOrInitStreamRevision(
 }
 
 export function handleEmployeeAdded(event: EmployeeAddedEvent): void {
-  let employee = new Employee(event.params.walletAddress.toHex());
+  let employee = new Employee(event.params.addr.toHex());
   employee.name = event.params.name;
   employee.age = event.params.age;
   employee.contactAddress = event.params.contactAddress;
   employee.country = event.params.country;
-  employee.walletAddress = event.params.walletAddress;
+  employee.addr = event.params.addr;
   employee.status = "ACTIVE";
   employee.employer = event.params.employer;
   employee.updatedAt = event.block.timestamp;
@@ -102,7 +102,7 @@ export function handleEmployeeAdded(event: EmployeeAddedEvent): void {
 }
 
 export function handleEmployeeDeleted(event: EmployeeDeletedEvent): void {
-  let employee = Employee.load(event.params.walletAddress.toHex());
+  let employee = Employee.load(event.params.addr.toHex());
   if (employee) {
     employee.status = "TERMINATED";
     employee.updatedAt = event.block.timestamp;
@@ -131,6 +131,7 @@ export function handleFlowUpdated(event: FlowUpdatedEvent): void {
     stream = new Stream(streamId);
     stream.sender = event.params.sender.toHex();
     stream.receiver = event.params.receiver.toHex();
+    stream.to = event.params.receiver.toHex();
     stream.token = event.params.token.toHex();
     stream.createdAt = currentTimestamp;
     stream.txHash = event.transaction.hash.toHex();
