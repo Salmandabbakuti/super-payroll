@@ -3,7 +3,7 @@ require("dotenv").config();
 
 task("deploy", "Deploys Contract", async () => {
   const contractFactory = await ethers.getContractFactory("SuperPayroll");
-  const contract = await contractFactory.deploy("0x59988e47A3503AaFaA0368b9deF095c818Fdca01");
+  const contract = await contractFactory.deploy("0x42bb40bF79730451B11f6De1CbA222F17b87Afd7");
   await contract.deployed();
   console.log("contract deployed at:", contract.address);
 });
@@ -17,7 +17,7 @@ module.exports = {
       url: "http://127.0.0.1:8545",
     },
     testnet: {
-      url: "https://rpc.ankr.com/gnosis",
+      url: process.env.TESTNET_RPC_URL,
       accounts: [process.env.PRIV_KEY],
     }
   }
