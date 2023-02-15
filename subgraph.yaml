@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: SuperPayroll
-    network: mumbai
+    network: goerli
     source:
-      address: "0xcd3B62Fd195C7734f4Eec573C7A60c6FEAf4ca64"
+      address: "0xdF0876C2140128DeEd612964033A48cABf2EfD84"
       abi: SuperPayroll
-      startBlock: 32040237
+      startBlock: 8490470
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

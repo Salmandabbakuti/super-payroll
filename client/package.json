@@ -1,0 +1,47 @@
+{
+  "name": "super-payroll-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SuperPayroll Frontend",
+  "author": "Salman Dabbakuti",
+  "keywords": [
+    "react",
+    "antd",
+    "superfluid"
+  ],
+  "main": "src/index.js",
+  "dependencies": {
+    "@ant-design/icons": "4.7.0",
+    "@reactour/tour": "^3.1.11",
+    "@superfluid-finance/sdk-core": "^0.6.1",
+    "antd": "4.23.2",
+    "buffer": "^6.0.3",
+    "dayjs": "^1.11.7",
+    "ethers": "^5.7.2",
+    "graphql": "^16.6.0",
+    "graphql-request": "^5.1.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.4.1",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": [
+    "chrome >= 67",
+    "edge >= 79",
+    "firefox >= 68",
+    "opera >= 54",
+    "safari >= 14"
+  ]
+}

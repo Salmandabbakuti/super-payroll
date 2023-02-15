@@ -1,0 +1,11 @@
+.new-post-card-container {
+  width: 400px;
+  margin-left: 37%;
+}
+
+@media (max-width: 768px) {
+  .new-post-card-container {
+    margin-left: 0;
+    width: 300px;
+  }
+}
