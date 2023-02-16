@@ -12,7 +12,6 @@
   "main": "src/index.js",
   "dependencies": {
     "@ant-design/icons": "4.7.0",
-    "@superfluid-finance/sdk-core": "^0.6.1",
     "antd": "4.23.2",
     "dayjs": "^1.11.7",
     "ethers": "^5.7.2",

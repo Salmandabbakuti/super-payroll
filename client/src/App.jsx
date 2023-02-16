@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { GraphQLClient, gql } from "graphql-request";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Framework } from "@superfluid-finance/sdk-core";
 import { providers, ethers } from "ethers";
 import {
   Tabs,
@@ -21,7 +20,8 @@ import {
 import {
   EditOutlined,
   DollarOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  SyncOutlined
 } from "@ant-design/icons";
 import "antd/dist/antd.css";
 import "./styles.css";
@@ -34,50 +34,19 @@ const client = new GraphQLClient(
   { headers: {} }
 );
 
-const tokens = [
-  {
-    name: "fDAIx",
-    symbol: "fDAIx",
-    address: "0xf2d68898557ccb2cf4c10c3ef2b034b2a69dad00",
-    icon:
-      "https://raw.githubusercontent.com/superfluid-finance/assets/master/public//tokens/dai/icon.svg"
-  },
-  {
-    name: "fUSDCx",
-    symbol: "fUSDCx",
-    address: "0x8ae68021f6170e5a766be613cea0d75236ecca9a",
-    icon:
-      "https://raw.githubusercontent.com/superfluid-finance/assets/master/public//tokens/usdc/icon.svg"
-  },
-  {
-    name: "fTUSDx",
-    symbol: "fTUSDx",
-    address: "0x95697ec24439e3eb7ba588c7b279b9b369236941",
-    icon:
-      "https://raw.githubusercontent.com/superfluid-finance/assets/master/public//tokens/tusd/icon.svg"
-  },
-  {
-    name: "ETHx",
-    symbol: "ETHx",
-    address: "0x5943f705abb6834cad767e6e4bb258bc48d9c947",
-    icon:
-      "https://raw.githubusercontent.com/superfluid-finance/assets/master/public//tokens/eth/icon.svg"
-  }
-];
-
 const superPayrollABI = [
   "function addEmployee(string _name, uint8 _age, string _contactAddress, string _country, address _addr)",
   "function cancelPaymentStream(address _employeeWalletAddress)",
   "function createPaymentStream(address _employeeWalletAddress, int96 _flowRate)",
   "function deleteEmployee(address _addr)",
-  "function employeeCount() view returns (uint256)",
+  "function currentEmployeeId() view returns (uint256)",
   "function employees(address) view returns (uint256 id, string name, uint8 age, string contactAddress, string country, address addr, address employer, bool isExists)",
   "function employer() view returns (address)",
   "function token() view returns (address)",
   "function updatePaymentStream(address _employeeWalletAddress, int96 _flowRate)"
 ];
 
-const superPayrollAddress = "0xdF0876C2140128DeEd612964033A48cABf2EfD84";
+const superPayrollAddress = "0xd67C690568578A421f6DA4272378D49af06644B3";
 
 const calculateFlowRateInTokenPerMonth = (amount) => {
   if (isNaN(amount)) return 0;
@@ -114,6 +83,11 @@ const STREAMS_QUERY = gql`
       id
       sender
       receiver
+      to {
+        name,
+        addr,
+        country
+      }
       token
       status
       flowRate
@@ -157,7 +131,6 @@ export default function App() {
   const [streams, setStreams] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [superfluidSdk, setSuperfluidSdk] = useState(null);
   const [updatedFlowRate, setUpdatedFlowRate] = useState(0);
   const [superPayrollContract, setSuperPayrollContract] = useState(null);
   const [employeeDetailsInput, setEmployeeDetailsInput] = useState({});
@@ -186,10 +159,6 @@ export default function App() {
         });
       }
       console.log("chainId:", chainId);
-      const sf = await Framework.create({
-        chainId,
-        provider
-      });
 
       const superPayrollContract = new ethers.Contract(
         superPayrollAddress,
@@ -197,7 +166,6 @@ export default function App() {
         provider.getSigner()
       );
       setSuperPayrollContract(superPayrollContract);
-      setSuperfluidSdk(sf);
       setProvider(provider);
       setChainId(chainId);
       setAccount(accounts[0]);
@@ -299,25 +267,19 @@ export default function App() {
   };
 
   const handleCreateStream = async ({
-    sender = account,
     receiver,
     flowRate
   }) => {
-    console.log("create inputs: ", sender, receiver, flowRate);
-    if (!sender || !receiver || !flowRate)
+    if (!account || chainId !== 5)
+      return message.error("Connect to goerli testnet");
+    console.log("create inputs: ", receiver, flowRate);
+    if (!receiver || !flowRate)
       return message.error("Please fill all the fields");
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken("0x5d8d9f5b96f4438195be9b99eee6118ed4304286");
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
-      let flowOp = superToken.createFlow({
-        sender,
-        receiver,
-        flowRate: flowRateInWeiPerSecond
-      });
-
-      await flowOp.exec(provider.getSigner());
+      const tx = await superPayrollContract.createPaymentStream(receiver, flowRateInWeiPerSecond);
       message.success("Stream created successfully");
       setLoading(false);
     } catch (err) {
@@ -328,23 +290,18 @@ export default function App() {
   };
 
   const handleUpdateStream = async ({
-    sender = account,
     receiver,
     flowRate
   }) => {
-    console.log("update inputs: ", sender, receiver, flowRate);
+    if (!account || chainId !== 5)
+      return message.error("Connect to goerli testnet");
+    console.log("update inputs: ", receiver, flowRate);
     if (!flowRate) return message.error("Please enter new flow rate");
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken("0x5d8b4c2554aeB7e86F387B4d6c00Ac33499Ed01f"); // DAIx default
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
-      let flowOp = superToken.updateFlow({
-        sender,
-        receiver,
-        flowRate: flowRateInWeiPerSecond
-      });
-      await flowOp.exec(provider.getSigner());
+      const tx = await superPayrollContract.updatePaymentStream(receiver, flowRateInWeiPerSecond);
       message.success("Stream updated successfully");
       setLoading(false);
     } catch (err) {
@@ -354,16 +311,12 @@ export default function App() {
     }
   };
 
-  const handleDeleteStream = async ({ sender, receiver }) => {
+  const handleDeleteStream = async ({ receiver }) => {
+    if (!account || chainId !== 5)
+      return message.error("Connect to goerli testnet");
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken("0x5d8b4c2554aeB7e86F387B4d6c00Ac33499Ed01f");
-      let flowOp = superToken.deleteFlow({
-        sender,
-        receiver
-      });
-
-      await flowOp.exec(provider.getSigner());
+      const tx = await superPayrollContract.cancelPaymentStream(receiver);
       message.success("Stream deleted successfully");
       setLoading(false);
     } catch (err) {
@@ -432,11 +385,9 @@ export default function App() {
       key: "token",
       width: "5%",
       render: ({ token }) => {
-        const tokenData = tokens.find(
-          (oneToken) => oneToken.address === token
-        ) || {
-          icon: "",
-          symbol: "Unknown"
+        const tokenData = {
+          icon: "https://raw.githubusercontent.com/superfluid-finance/assets/master/public//tokens/dai/icon.svg",
+          symbol: "fDAIx"
         };
         return (
           <>
@@ -454,7 +405,7 @@ export default function App() {
       }
     },
     {
-      title: "Sender",
+      title: "Employer",
       key: "sender",
       ellipsis: true,
       width: "10%",
@@ -469,17 +420,17 @@ export default function App() {
       )
     },
     {
-      title: "Receiver",
+      title: "Employee",
       key: "receiver",
       ellipsis: true,
       width: "10%",
-      render: ({ receiver }) => (
+      render: ({ receiver, to }) => (
         <a
           href={`https://goerli.etherscan.io/address/${receiver}`}
           target="_blank"
           rel="noreferrer"
         >
-          {receiver === account ? `${receiver} (You)` : receiver}
+          {receiver === account ? `${receiver} (You)` : `${to.name} (${receiver.slice(0, 6)}...${receiver.slice(-6)})`}
         </a>
       )
     },
@@ -491,12 +442,9 @@ export default function App() {
       render: ({ flowRate, token }) => {
         // calculate flow rate in tokens per month
         const monthlyFlowRate = calculateFlowRateInTokenPerMonth(flowRate);
-        const tokenSymbol =
-          tokens.find((oneToken) => oneToken.address === token)?.symbol ||
-          "Unknown";
         return (
           <span style={{ color: "#1890ff" }}>
-            {monthlyFlowRate} {tokenSymbol}/mo
+            {monthlyFlowRate} fDAIx/mo
           </span>
         );
       }
@@ -569,28 +517,28 @@ export default function App() {
       title: "Name",
       key: "name",
       dataIndex: "name",
-      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      sorter: (a, b) => a.name.localeCompare(b.name),
       width: "4%"
     },
     {
       title: "Age",
       key: "age",
       dataIndex: "age",
-      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      sorter: (a, b) => a.age - b.age,
       width: "2%"
     },
     {
       title: "Address",
       key: "contactAddress",
       dataIndex: "contactAddress",
-      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      sorter: (a, b) => a.contactAddress.localeCompare(b.contactAddress),
       width: "5%"
     },
     {
       title: "Country",
       key: "country",
       dataIndex: "country",
-      sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
+      sorter: (a, b) => a.country.localeCompare(b.country),
       width: "4%"
     },
     {
@@ -655,7 +603,7 @@ export default function App() {
         <Layout className="site-layout">
           <Header className="site-layout-background" style={{ padding: 0 }}>
             <h1 style={{ textAlign: "center", color: "white" }}>
-              SuperPayroll
+              Super Payroll
             </h1>
           </Header>
           <Content
@@ -757,6 +705,7 @@ export default function App() {
                 <Tabs
                   // onChange={ }
                   type="line"
+                  animated
                   style={{ marginBottom: 20 }}
                   items={[
                     {
@@ -764,15 +713,21 @@ export default function App() {
                       label: "Employees",
                       children: (
                         <>
-                          <Input.Search
-                            placeholder="Search by employee name or wallet address"
-                            value={searchInput}
-                            enterButton
-                            allowClear
-                            loading={loading}
-                            onSearch={getEmployees}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                          />
+                          <Space>
+                            <Input.Search
+                              placeholder="Search by employee name or wallet address"
+                              value={searchInput}
+                              enterButton
+                              allowClear
+                              loading={loading}
+                              onSearch={getEmployees}
+                              onChange={(e) => setSearchInput(e.target.value)}
+                            />
+                            <Button type="primary" onClick={getEmployees}>
+                              Refresh
+                              <SyncOutlined />
+                            </Button>
+                          </Space>
                           <Table
                             className="table_grid"
                             columns={employeeColumns}
@@ -794,18 +749,24 @@ export default function App() {
                     },
                     {
                       key: "2",
-                      label: "Streams",
+                      label: "Payment Streams",
                       children: (
                         <>
-                          <Input.Search
-                            placeholder="Search by employee wallet address"
-                            value={searchInput}
-                            enterButton
-                            allowClear
-                            loading={loading}
-                            onSearch={getStreams}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                          />
+                          <Space>
+                            <Input.Search
+                              placeholder="Search by employee wallet address"
+                              value={searchInput}
+                              enterButton
+                              allowClear
+                              loading={loading}
+                              onSearch={getStreams}
+                              onChange={(e) => setSearchInput(e.target.value)}
+                            />
+                            <Button type="primary" onClick={getStreams}>
+                              Refresh
+                              <SyncOutlined />
+                            </Button>
+                          </Space>
                           <Table
                             className="table_grid"
                             columns={streamColumns}
@@ -846,7 +807,7 @@ export default function App() {
               rel="noopener noreferrer"
             >
               © {new Date().getFullYear()} Salman Dabbakuti. Powered by
-              Superfluid & Push Protocol
+              Superfluid
             </a>
           </Footer>
         </Layout>

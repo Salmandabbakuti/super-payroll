@@ -6,9 +6,9 @@ dataSources:
     name: SuperPayroll
     network: goerli
     source:
-      address: "0xdF0876C2140128DeEd612964033A48cABf2EfD84"
+      address: "0xd67C690568578A421f6DA4272378D49af06644B3"
       abi: SuperPayroll
-      startBlock: 8490470
+      startBlock: 8502939
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
