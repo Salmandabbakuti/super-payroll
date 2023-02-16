@@ -94,7 +94,7 @@ export function handleEmployeeAdded(event: EmployeeAddedEvent): void {
   employee.age = event.params.age;
   employee.contactAddress = event.params.contactAddress;
   employee.country = event.params.country;
-  employee.addr = event.params.addr;
+  employee.addr = event.params.addr.toHex();
   employee.status = "ACTIVE";
   employee.employer = event.params.employer;
   employee.updatedAt = event.block.timestamp;

@@ -161,6 +161,7 @@ export default function App() {
   const [updatedFlowRate, setUpdatedFlowRate] = useState(0);
   const [superPayrollContract, setSuperPayrollContract] = useState(null);
   const [employeeDetailsInput, setEmployeeDetailsInput] = useState({});
+  const [searchInput, setSearchInput] = useState("");
 
   const handleEmployeeDetailsInputChange = (e) =>
     setEmployeeDetailsInput({
@@ -240,7 +241,16 @@ export default function App() {
         orderBy: "createdAt",
         orderDirection: "desc",
         where: {
-          or: [{ sender: account }, { receiver: account }]
+          and: [
+            {
+              or: [{ sender: account }, { receiver: account }]
+            },
+            {
+              ...(searchInput && {
+                or: [{ receiver_contains_nocase: searchInput }]
+              })
+            }
+          ]
         }
       })
       .then((data) => {
@@ -264,8 +274,16 @@ export default function App() {
         orderBy: "name",
         orderDirection: "asc",
         where: {
-          employer: account,
-          status: "ACTIVE"
+          and: [
+            {
+              employer: account,
+              status: "ACTIVE"
+            },
+            {
+              ...(searchInput && {
+                or: [{ name_contains_nocase: searchInput }, { addr_contains_nocase: searchInput }]
+              })
+            }]
         }
       })
       .then((data) => {
@@ -281,17 +299,16 @@ export default function App() {
   };
 
   const handleCreateStream = async ({
-    token,
     sender = account,
     receiver,
     flowRate
   }) => {
-    console.log("create inputs: ", token, sender, receiver, flowRate);
-    if (!token || !sender || !receiver || !flowRate)
+    console.log("create inputs: ", sender, receiver, flowRate);
+    if (!sender || !receiver || !flowRate)
       return message.error("Please fill all the fields");
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken(token);
+      const superToken = await superfluidSdk.loadSuperToken("0x5d8d9f5b96f4438195be9b99eee6118ed4304286");
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
       let flowOp = superToken.createFlow({
@@ -311,16 +328,15 @@ export default function App() {
   };
 
   const handleUpdateStream = async ({
-    token,
     sender = account,
     receiver,
     flowRate
   }) => {
-    console.log("update inputs: ", token, sender, receiver, flowRate);
+    console.log("update inputs: ", sender, receiver, flowRate);
     if (!flowRate) return message.error("Please enter new flow rate");
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken(token);
+      const superToken = await superfluidSdk.loadSuperToken("0x5d8b4c2554aeB7e86F387B4d6c00Ac33499Ed01f"); // DAIx default
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
       let flowOp = superToken.updateFlow({
@@ -338,10 +354,10 @@ export default function App() {
     }
   };
 
-  const handleDeleteStream = async ({ token, sender, receiver }) => {
+  const handleDeleteStream = async ({ sender, receiver }) => {
     try {
       setLoading(true);
-      const superToken = await superfluidSdk.loadSuperToken(token);
+      const superToken = await superfluidSdk.loadSuperToken("0x5d8b4c2554aeB7e86F387B4d6c00Ac33499Ed01f");
       let flowOp = superToken.deleteFlow({
         sender,
         receiver
@@ -368,10 +384,22 @@ export default function App() {
     )
       return message.error("Please fill all the fields!");
     console.log("employeeDetails: ", employeeDetails);
-    const { name, age, country, contactAddress, walletAddress } = employeeDetails;
+    const {
+      name,
+      age,
+      country,
+      contactAddress,
+      walletAddress
+    } = employeeDetails;
     setLoading(true);
     try {
-      const tx = await superPayrollContract.addEmployee(name, age, contactAddress, country, walletAddress);
+      const tx = await superPayrollContract.addEmployee(
+        name,
+        age,
+        contactAddress,
+        country,
+        walletAddress
+      );
       await tx.wait();
       message.success("Employee added successfully");
       setLoading(false);
@@ -600,6 +628,7 @@ export default function App() {
                   />
                 </>
               }
+              onConfirm={() => handleCreateStream({ receiver: row.addr, flowRate: updatedFlowRate })}
             >
               <Button type="primary" shape="circle">
                 <DollarOutlined />
@@ -734,44 +763,66 @@ export default function App() {
                       key: "1",
                       label: "Employees",
                       children: (
-                        <Table
-                          className="table_grid"
-                          columns={employeeColumns}
-                          rowKey="id"
-                          dataSource={employees}
-                          scroll={{ x: 970 }}
-                          loading={loading}
-                          pagination={{
-                            pageSizeOptions: [10, 25, 50, 100],
-                            showSizeChanger: true,
-                            defaultCurrent: 1,
-                            defaultPageSize: 10,
-                            size: "default"
-                          }}
-                          onChange={() => { }}
-                        />
+                        <>
+                          <Input.Search
+                            placeholder="Search by employee name or wallet address"
+                            value={searchInput}
+                            enterButton
+                            allowClear
+                            loading={loading}
+                            onSearch={getEmployees}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                          />
+                          <Table
+                            className="table_grid"
+                            columns={employeeColumns}
+                            rowKey="id"
+                            dataSource={employees}
+                            scroll={{ x: 970 }}
+                            loading={loading}
+                            pagination={{
+                              pageSizeOptions: [10, 25, 50, 100],
+                              showSizeChanger: true,
+                              defaultCurrent: 1,
+                              defaultPageSize: 10,
+                              size: "default"
+                            }}
+                            onChange={() => { }}
+                          />
+                        </>
                       )
                     },
                     {
                       key: "2",
                       label: "Streams",
                       children: (
-                        <Table
-                          className="table_grid"
-                          columns={streamColumns}
-                          rowKey="id"
-                          dataSource={streams}
-                          scroll={{ x: 970 }}
-                          loading={loading}
-                          pagination={{
-                            pageSizeOptions: [10, 25, 50, 100],
-                            showSizeChanger: true,
-                            defaultCurrent: 1,
-                            defaultPageSize: 10,
-                            size: "default"
-                          }}
-                          onChange={() => { }}
-                        />
+                        <>
+                          <Input.Search
+                            placeholder="Search by employee wallet address"
+                            value={searchInput}
+                            enterButton
+                            allowClear
+                            loading={loading}
+                            onSearch={getStreams}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                          />
+                          <Table
+                            className="table_grid"
+                            columns={streamColumns}
+                            rowKey="id"
+                            dataSource={streams}
+                            scroll={{ x: 970 }}
+                            loading={loading}
+                            pagination={{
+                              pageSizeOptions: [10, 25, 50, 100],
+                              showSizeChanger: true,
+                              defaultCurrent: 1,
+                              defaultPageSize: 10,
+                              size: "default"
+                            }}
+                            onChange={() => { }}
+                          />
+                        </>
                       )
                     }
                   ]}
