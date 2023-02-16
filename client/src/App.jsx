@@ -4,29 +4,21 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Framework } from "@superfluid-finance/sdk-core";
 import { providers, ethers } from "ethers";
-import { useTour } from '@reactour/tour';
 import {
   Tabs,
-  notification,
   Avatar,
   Button,
   Layout,
-  Menu,
   Card,
-  Drawer,
   Input,
   message,
   Popconfirm,
-  Empty,
   Space,
   Table,
   Tag,
-  Select,
   InputNumber
 } from "antd";
 import {
-  BellOutlined,
-  BarsOutlined,
   EditOutlined,
   DollarOutlined,
   DeleteOutlined
@@ -34,12 +26,11 @@ import {
 import "antd/dist/antd.css";
 import "./styles.css";
 
-const { Header, Footer, Sider, Content } = Layout;
+const { Header, Footer, Content } = Layout;
 dayjs.extend(relativeTime);
 
-
 const client = new GraphQLClient(
-  "https://api.thegraph.com/subgraphs/name/salmandabbakuti/superfluid-stream-push",
+  "https://api.thegraph.com/subgraphs/name/salmandabbakuti/super-payroll",
   { headers: {} }
 );
 
@@ -74,7 +65,19 @@ const tokens = [
   }
 ];
 
-const isFirstTimeUser = localStorage.getItem("product_tour") === null;
+const superPayrollABI = [
+  "function addEmployee(string _name, uint8 _age, string _contactAddress, string _country, address _addr)",
+  "function cancelPaymentStream(address _employeeWalletAddress)",
+  "function createPaymentStream(address _employeeWalletAddress, int96 _flowRate)",
+  "function deleteEmployee(address _addr)",
+  "function employeeCount() view returns (uint256)",
+  "function employees(address) view returns (uint256 id, string name, uint8 age, string contactAddress, string country, address addr, address employer, bool isExists)",
+  "function employer() view returns (address)",
+  "function token() view returns (address)",
+  "function updatePaymentStream(address _employeeWalletAddress, int96 _flowRate)"
+];
+
+const superPayrollAddress = "0xdF0876C2140128DeEd612964033A48cABf2EfD84";
 
 const calculateFlowRateInTokenPerMonth = (amount) => {
   if (isNaN(amount)) return 0;
@@ -120,17 +123,50 @@ const STREAMS_QUERY = gql`
   }
 `;
 
+const EMPLOYEES_QUERY = gql`
+  query getEmployees(
+    $skip: Int
+    $first: Int
+    $orderBy: Employee_orderBy
+    $orderDirection: OrderDirection
+    $where: Employee_filter
+  ) {
+    employees(
+      skip: $skip
+      first: $first
+      orderBy: $orderBy
+      orderDirection: $orderDirection
+      where: $where
+    ) {
+      id
+      name
+      age
+      contactAddress
+      country
+      addr
+      employer
+      updatedAt
+    }
+  }
+`;
+
 export default function App() {
   const [account, setAccount] = useState(null);
   const [provider, setProvider] = useState(null);
   const [chainId, setChainId] = useState(null);
   const [streams, setStreams] = useState([]);
-  const [streamInput, setStreamInput] = useState({ token: tokens[0].address });
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [superfluidSdk, setSuperfluidSdk] = useState(null);
   const [updatedFlowRate, setUpdatedFlowRate] = useState(0);
+  const [superPayrollContract, setSuperPayrollContract] = useState(null);
+  const [employeeDetailsInput, setEmployeeDetailsInput] = useState({});
 
-  const { setIsOpen } = useTour();
+  const handleEmployeeDetailsInputChange = (e) =>
+    setEmployeeDetailsInput({
+      ...employeeDetailsInput,
+      [e.target.name]: e.target.value
+    });
 
   const handleConnectWallet = async () => {
     if (window?.ethereum) {
@@ -153,11 +189,17 @@ export default function App() {
         chainId,
         provider
       });
+
+      const superPayrollContract = new ethers.Contract(
+        superPayrollAddress,
+        superPayrollABI,
+        provider.getSigner()
+      );
+      setSuperPayrollContract(superPayrollContract);
       setSuperfluidSdk(sf);
       setProvider(provider);
       setChainId(chainId);
       setAccount(accounts[0]);
-      setIsOpen(isFirstTimeUser);
     } else {
       console.warn("Please use web3 enabled browser");
       message.warn("Please install Metamask or any other web3 enabled browser");
@@ -175,6 +217,8 @@ export default function App() {
         console.log("connected to network", info)
       );
 
+      getStreams();
+      getEmployees();
       // sync streams every 30 seconds
       const intervalCall = setInterval(() => {
         getStreams();
@@ -186,8 +230,6 @@ export default function App() {
       };
     }
   }, [provider]);
-
-
 
   const getStreams = () => {
     setLoading(true);
@@ -210,6 +252,31 @@ export default function App() {
         setLoading(false);
         message.error("Something went wrong!");
         console.error("failed to get streams: ", err);
+      });
+  };
+
+  const getEmployees = () => {
+    setLoading(true);
+    client
+      .request(EMPLOYEES_QUERY, {
+        skip: 0,
+        first: 100,
+        orderBy: "name",
+        orderDirection: "asc",
+        where: {
+          employer: account,
+          status: "ACTIVE"
+        }
+      })
+      .then((data) => {
+        console.log("employees: ", data.employees);
+        setEmployees(data.employees);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setLoading(false);
+        message.error("Something went wrong!");
+        console.error("failed to get employees: ", err);
       });
   };
 
@@ -287,6 +354,47 @@ export default function App() {
       setLoading(false);
       message.error("Failed to delete stream");
       console.error("failed to delete stream: ", err);
+    }
+  };
+
+  const handleAddEmployee = async (employeeDetails) => {
+    if (!account || chainId !== 5)
+      return message.error("Connect to goerli testnet");
+    // check if all fields are filled
+    if (
+      !["name", "age", "country", "contactAddress", "walletAddress"].every(
+        (key) => employeeDetails[key]
+      )
+    )
+      return message.error("Please fill all the fields!");
+    console.log("employeeDetails: ", employeeDetails);
+    const { name, age, country, contactAddress, walletAddress } = employeeDetails;
+    setLoading(true);
+    try {
+      const tx = await superPayrollContract.addEmployee(name, age, contactAddress, country, walletAddress);
+      await tx.wait();
+      message.success("Employee added successfully");
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+      message.error("Failed to add employee");
+      console.error("failed to add employee: ", err);
+    }
+  };
+
+  const handleDeleteEmployee = async (addr) => {
+    if (!account || chainId !== 5)
+      return message.error("Connect to goerli testnet");
+    setLoading(true);
+    try {
+      const tx = await superPayrollContract.deleteEmployee(addr);
+      await tx.wait();
+      message.success("Employee deleted successfully");
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+      message.error("Failed to delete employee");
+      console.error("failed to delete employee: ", err);
     }
   };
 
@@ -434,14 +542,14 @@ export default function App() {
       key: "name",
       dataIndex: "name",
       sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
-      width: "5%",
+      width: "4%"
     },
     {
       title: "Age",
       key: "age",
       dataIndex: "age",
       sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
-      width: "5%",
+      width: "2%"
     },
     {
       title: "Address",
@@ -455,19 +563,20 @@ export default function App() {
       key: "country",
       dataIndex: "country",
       sorter: (a, b) => a.createdAt.localeCompare(b.createdAt),
-      width: "5%"
+      width: "4%"
     },
     {
       title: "Wallet Address",
-      key: "walletAddress",
+      key: "addr",
       width: "5%",
-      render: ({ walletAddress }) => (
+      ellipsis: true,
+      render: ({ addr }) => (
         <a
-          href={`https://goerli.etherscan.io/address/${walletAddress}`}
+          href={`https://goerli.etherscan.io/address/${addr}`}
           target="_blank"
           rel="noreferrer"
         >
-          {walletAddress}
+          {addr}
         </a>
       )
     },
@@ -490,14 +599,15 @@ export default function App() {
                     onChange={(val) => setUpdatedFlowRate(val)}
                   />
                 </>
-              }>
+              }
+            >
               <Button type="primary" shape="circle">
                 <DollarOutlined />
               </Button>
             </Popconfirm>
             <Popconfirm
               title="Are you sure to delete this employee?"
-            // onConfirm={() => handleDeleteEmployee(row)}
+              onConfirm={() => handleDeleteEmployee(row.addr)}
             >
               <Button type="primary" shape="circle" danger>
                 <DeleteOutlined className="delete_stream" />
@@ -551,7 +661,9 @@ export default function App() {
                             Disconnect
                           </Button>
                         }
-                        description={`${account.slice(0, 8)}...${account.slice(-8)}`}
+                        description={`${account.slice(0, 8)}...${account.slice(
+                          -8
+                        )}`}
                         avatar={
                           <Avatar
                             shape="circle"
@@ -571,38 +683,41 @@ export default function App() {
                       type="text"
                       placeholder="Name"
                       name="name"
+                      onChange={handleEmployeeDetailsInputChange}
                     />
                     <Space direction="horizantal" style={{ width: "100%" }}>
                       <Input
                         type="number"
                         placeholder="Age"
                         name="age"
+                        onChange={handleEmployeeDetailsInputChange}
                       />
                       <Input
                         type="text"
                         placeholder="Country"
                         name="country"
+                        onChange={handleEmployeeDetailsInputChange}
                       />
                     </Space>
-                    <Input placeholder="Contact Address" />
+                    <Input
+                      placeholder="Contact Address"
+                      name="contactAddress"
+                      onChange={handleEmployeeDetailsInputChange}
+                    />
                     <Input
                       type="text"
                       placeholder="Wallet Address"
-                      name="receiver"
-                      value={streamInput.receiver || ""}
-                      onChange={(e) =>
-                        setStreamInput({
-                          ...streamInput,
-                          receiver: e.target.value
-                        })
-                      }
+                      name="walletAddress"
+                      onChange={handleEmployeeDetailsInputChange}
                     />
                   </Space>
                   <Button
                     type="primary"
                     shape="round"
                     style={{ marginTop: 10 }}
-                    onClick={() => handleCreateStream(streamInput)}
+                    loading={loading}
+                    disabled={loading}
+                    onClick={() => handleAddEmployee(employeeDetailsInput)}
                   >
                     Add Employee
                   </Button>
@@ -614,50 +729,51 @@ export default function App() {
                   // onChange={ }
                   type="line"
                   style={{ marginBottom: 20 }}
-                  items={[{
-                    key: "1",
-                    label: "Employees",
-                    children: (
-                      <Table
-                        className="table_grid"
-                        columns={employeeColumns}
-                        rowKey="id"
-                        dataSource={streams}
-                        scroll={{ x: 970 }}
-                        loading={loading}
-                        pagination={{
-                          pageSizeOptions: [10, 25, 50, 100],
-                          showSizeChanger: true,
-                          defaultCurrent: 1,
-                          defaultPageSize: 10,
-                          size: "default"
-                        }}
-                        onChange={() => { }}
-                      />
-                    )
-                  },
-                  {
-                    key: "2",
-                    label: "Streams",
-                    children: (
-                      <Table
-                        className="table_grid"
-                        columns={streamColumns}
-                        rowKey="id"
-                        dataSource={streams}
-                        scroll={{ x: 970 }}
-                        loading={loading}
-                        pagination={{
-                          pageSizeOptions: [10, 25, 50, 100],
-                          showSizeChanger: true,
-                          defaultCurrent: 1,
-                          defaultPageSize: 10,
-                          size: "default"
-                        }}
-                        onChange={() => { }}
-                      />
-                    )
-                  }
+                  items={[
+                    {
+                      key: "1",
+                      label: "Employees",
+                      children: (
+                        <Table
+                          className="table_grid"
+                          columns={employeeColumns}
+                          rowKey="id"
+                          dataSource={employees}
+                          scroll={{ x: 970 }}
+                          loading={loading}
+                          pagination={{
+                            pageSizeOptions: [10, 25, 50, 100],
+                            showSizeChanger: true,
+                            defaultCurrent: 1,
+                            defaultPageSize: 10,
+                            size: "default"
+                          }}
+                          onChange={() => { }}
+                        />
+                      )
+                    },
+                    {
+                      key: "2",
+                      label: "Streams",
+                      children: (
+                        <Table
+                          className="table_grid"
+                          columns={streamColumns}
+                          rowKey="id"
+                          dataSource={streams}
+                          scroll={{ x: 970 }}
+                          loading={loading}
+                          pagination={{
+                            pageSizeOptions: [10, 25, 50, 100],
+                            showSizeChanger: true,
+                            defaultCurrent: 1,
+                            defaultPageSize: 10,
+                            size: "default"
+                          }}
+                          onChange={() => { }}
+                        />
+                      )
+                    }
                   ]}
                 />
               </div>
