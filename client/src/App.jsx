@@ -131,6 +131,7 @@ export default function App() {
   const [streams, setStreams] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
   const [updatedFlowRate, setUpdatedFlowRate] = useState(0);
   const [superPayrollContract, setSuperPayrollContract] = useState(null);
   const [employeeDetailsInput, setEmployeeDetailsInput] = useState({});
@@ -201,7 +202,7 @@ export default function App() {
   }, [provider]);
 
   const getStreams = () => {
-    setLoading(true);
+    setDataLoading(true);
     client
       .request(STREAMS_QUERY, {
         skip: 0,
@@ -224,17 +225,17 @@ export default function App() {
       .then((data) => {
         console.log("streams: ", data.streams);
         setStreams(data.streams);
-        setLoading(false);
+        setDataLoading(false);
       })
       .catch((err) => {
-        setLoading(false);
+        setDataLoading(false);
         message.error("Something went wrong!");
         console.error("failed to get streams: ", err);
       });
   };
 
   const getEmployees = () => {
-    setLoading(true);
+    setDataLoading(true);
     client
       .request(EMPLOYEES_QUERY, {
         skip: 0,
@@ -257,10 +258,10 @@ export default function App() {
       .then((data) => {
         console.log("employees: ", data.employees);
         setEmployees(data.employees);
-        setLoading(false);
+        setDataLoading(false);
       })
       .catch((err) => {
-        setLoading(false);
+        setDataLoading(false);
         message.error("Something went wrong!");
         console.error("failed to get employees: ", err);
       });
@@ -391,7 +392,7 @@ export default function App() {
         };
         return (
           <>
-            <Avatar shape="circle" size="large" src={tokenData.icon} />
+            <Avatar shape="circle" size="small" src={tokenData.icon} />
             <a
               href={`https://goerli.etherscan.io/token/${token}`}
               target="_blank"
@@ -719,12 +720,11 @@ export default function App() {
                               value={searchInput}
                               enterButton
                               allowClear
-                              loading={loading}
+                              loading={dataLoading}
                               onSearch={getEmployees}
                               onChange={(e) => setSearchInput(e.target.value)}
                             />
                             <Button type="primary" onClick={getEmployees}>
-                              Refresh
                               <SyncOutlined />
                             </Button>
                           </Space>
@@ -734,7 +734,7 @@ export default function App() {
                             rowKey="id"
                             dataSource={employees}
                             scroll={{ x: 970 }}
-                            loading={loading}
+                            loading={dataLoading}
                             pagination={{
                               pageSizeOptions: [10, 25, 50, 100],
                               showSizeChanger: true,
@@ -758,12 +758,11 @@ export default function App() {
                               value={searchInput}
                               enterButton
                               allowClear
-                              loading={loading}
+                              loading={dataLoading}
                               onSearch={getStreams}
                               onChange={(e) => setSearchInput(e.target.value)}
                             />
                             <Button type="primary" onClick={getStreams}>
-                              Refresh
                               <SyncOutlined />
                             </Button>
                           </Space>
@@ -773,7 +772,7 @@ export default function App() {
                             rowKey="id"
                             dataSource={streams}
                             scroll={{ x: 970 }}
-                            loading={loading}
+                            loading={dataLoading}
                             pagination={{
                               pageSizeOptions: [10, 25, 50, 100],
                               showSizeChanger: true,
