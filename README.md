@@ -20,11 +20,11 @@ npm start
 
 ##### Demo
 
+https://user-images.githubusercontent.com/29351207/221543438-802dd985-a800-4593-ac68-51ec2c6e99fd.mp4
+
 ![sp1](https://user-images.githubusercontent.com/29351207/221494608-fb4d1af2-0a82-4706-8e30-7427f7fe1ca5.png)
 ![sp2](https://user-images.githubusercontent.com/29351207/221494614-0466a7d9-4a23-4dd1-8c5d-4ff5affacb2d.png)
 ![sp3](https://user-images.githubusercontent.com/29351207/221494624-afdf4b23-a899-45e4-839a-20f6d3443b31.png)
-
-[![Super Payroll Demo](https://cdn.loom.com/sessions/thumbnails/7be14aaf55c1496ea009b04bf9aa12c4-with-play.gif)](https://www.loom.com/share/7be14aaf55c1496ea009b04bf9aa12c4 "Super Payroll Demo")
 
 ```
 
