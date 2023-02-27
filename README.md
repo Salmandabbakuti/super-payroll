@@ -24,7 +24,7 @@ npm start
 ![sp2](https://user-images.githubusercontent.com/29351207/221494614-0466a7d9-4a23-4dd1-8c5d-4ff5affacb2d.png)
 ![sp3](https://user-images.githubusercontent.com/29351207/221494624-afdf4b23-a899-45e4-839a-20f6d3443b31.png)
 
-![Super Payroll Demo](https://www.loom.com/share/7be14aaf55c1496ea009b04bf9aa12c4)
+[![Super Payroll Demo](https://cdn.loom.com/sessions/thumbnails/7be14aaf55c1496ea009b04bf9aa12c4-with-play.gif)](https://www.loom.com/share/7be14aaf55c1496ea009b04bf9aa12c4 "Super Payroll Demo")
 
 ```
 
