@@ -4,7 +4,7 @@ type Employee @entity {
   age: Int! # uint8
   contactAddress: String! # string
   country: String! # string
-  addr: Bytes! # address
+  addr: String! # address
   status: EmployeeStatus! # enum
   employer: Bytes! # address
   streams: [Stream!]! @derivedFrom(field: "to")

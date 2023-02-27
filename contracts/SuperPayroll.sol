@@ -13,7 +13,7 @@ contract SuperPayroll {
 
     address public employer;
 
-    uint256 public employeeCount;
+    uint256 public currentEmployeeId;
 
     struct Employee {
         uint256 id;
@@ -76,7 +76,7 @@ contract SuperPayroll {
 
         // add employee to mapping
         employees[_addr] = Employee(
-            employeeCount,
+            currentEmployeeId,
             _name,
             _age,
             _contactAddress,
@@ -88,7 +88,7 @@ contract SuperPayroll {
 
         // emit event
         emit EmployeeAdded(
-            employeeCount,
+            currentEmployeeId,
             _name,
             _age,
             _contactAddress,
@@ -97,8 +97,8 @@ contract SuperPayroll {
             employer
         );
 
-        // increment employee count
-        employeeCount++;
+        // increment employee id
+        currentEmployeeId++;
     }
 
     function deleteEmployee(
@@ -155,7 +155,7 @@ contract SuperPayroll {
         address _employeeWalletAddress
     ) public onlyEmployer employeeExists(_employeeWalletAddress) {
         // cancel payment stream
-        token.deleteFlow(msg.sender, _employeeWalletAddress);
+        token.deleteFlow(address(this), _employeeWalletAddress);
 
         // emit event
         emit FlowUpdated(address(token), msg.sender, _employeeWalletAddress, 0);
