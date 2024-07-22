@@ -2,10 +2,9 @@ require('@nomicfoundation/hardhat-toolbox');
 require("dotenv").config();
 
 task("deploy", "Deploys Contract", async () => {
-  const contractFactory = await ethers.getContractFactory("SuperPayroll");
-  const contract = await contractFactory.deploy("0x42bb40bF79730451B11f6De1CbA222F17b87Afd7");
-  await contract.deployed();
-  console.log("contract deployed at:", contract.address);
+  const contractInstance = await ethers.deployContract("SuperPayroll", ["0x9ce2062b085a2268e8d769ffc040f6692315fd2c"]);
+  await contractInstance.waitForDeployment();
+  console.log("contract deployed at:", contractInstance.target);
 });
 
 
@@ -16,8 +15,8 @@ module.exports = {
     local: {
       url: "http://127.0.0.1:8545",
     },
-    testnet: {
-      url: process.env.TESTNET_RPC_URL,
+    sepolia: {
+      url: "https://1rpc.io/sepolia",
       accounts: [process.env.PRIV_KEY],
     }
   }

@@ -30,7 +30,7 @@ const { Header, Footer, Content } = Layout;
 dayjs.extend(relativeTime);
 
 const client = new GraphQLClient(
-  "https://api.thegraph.com/subgraphs/name/salmandabbakuti/super-payroll",
+  "https://api.studio.thegraph.com/query/15343/super-payroll/v0.0.1",
   { headers: {} }
 );
 
@@ -46,7 +46,7 @@ const superPayrollABI = [
   "function updatePaymentStream(address _employeeWalletAddress, int96 _flowRate)"
 ];
 
-const superPayrollAddress = "0xd67C690568578A421f6DA4272378D49af06644B3";
+const superPayrollAddress = "0xa5f53E022cfeae6642567ce2be6D5ae217Aa1aF3";
 
 const calculateFlowRateInTokenPerMonth = (amount) => {
   if (isNaN(amount)) return 0;
@@ -84,8 +84,8 @@ const STREAMS_QUERY = gql`
       sender
       receiver
       to {
-        name,
-        addr,
+        name
+        addr
         country
       }
       token
@@ -151,12 +151,12 @@ export default function App() {
       console.log("Using account: ", accounts[0]);
       const provider = new providers.Web3Provider(window.ethereum);
       const { chainId } = await provider.getNetwork();
-      if (chainId !== 5) {
-        message.info("Switching to goerli testnet");
-        // switch to the goerli testnet
+      if (chainId !== 11155111) {
+        message.info("Switching to sepolia testnet");
+        // switch to the sepolia testnet
         await window.ethereum.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0x5" }]
+          params: [{ chainId: "0xaa36a7" }]
         });
       }
       console.log("chainId:", chainId);
@@ -250,9 +250,13 @@ export default function App() {
             },
             {
               ...(searchInput && {
-                or: [{ name_contains_nocase: searchInput }, { addr_contains_nocase: searchInput }]
+                or: [
+                  { name_contains_nocase: searchInput },
+                  { addr_contains_nocase: searchInput }
+                ]
               })
-            }]
+            }
+          ]
         }
       })
       .then((data) => {
@@ -267,12 +271,9 @@ export default function App() {
       });
   };
 
-  const handleCreateStream = async ({
-    receiver,
-    flowRate
-  }) => {
-    if (!account || chainId !== 5)
-      return message.error("Connect to goerli testnet");
+  const handleCreateStream = async ({ receiver, flowRate }) => {
+    if (!account || chainId !== 11155111)
+      return message.error("Connect to sepolia testnet");
     console.log("create inputs: ", receiver, flowRate);
     if (!receiver || !flowRate)
       return message.error("Please fill all the fields");
@@ -280,7 +281,10 @@ export default function App() {
       setLoading(true);
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
-      const tx = await superPayrollContract.createPaymentStream(receiver, flowRateInWeiPerSecond);
+      const tx = await superPayrollContract.createPaymentStream(
+        receiver,
+        flowRateInWeiPerSecond
+      );
       message.success("Stream created successfully");
       setLoading(false);
     } catch (err) {
@@ -290,19 +294,19 @@ export default function App() {
     }
   };
 
-  const handleUpdateStream = async ({
-    receiver,
-    flowRate
-  }) => {
-    if (!account || chainId !== 5)
-      return message.error("Connect to goerli testnet");
+  const handleUpdateStream = async ({ receiver, flowRate }) => {
+    if (!account || chainId !== 11155111)
+      return message.error("Connect to sepolia testnet");
     console.log("update inputs: ", receiver, flowRate);
     if (!flowRate) return message.error("Please enter new flow rate");
     try {
       setLoading(true);
       const flowRateInWeiPerSecond = calculateFlowRateInWeiPerSecond(flowRate);
       console.log("flowRateInWeiPerSecond: ", flowRateInWeiPerSecond);
-      const tx = await superPayrollContract.updatePaymentStream(receiver, flowRateInWeiPerSecond);
+      const tx = await superPayrollContract.updatePaymentStream(
+        receiver,
+        flowRateInWeiPerSecond
+      );
       message.success("Stream updated successfully");
       setLoading(false);
     } catch (err) {
@@ -313,8 +317,8 @@ export default function App() {
   };
 
   const handleDeleteStream = async ({ receiver }) => {
-    if (!account || chainId !== 5)
-      return message.error("Connect to goerli testnet");
+    if (!account || chainId !== 11155111)
+      return message.error("Connect to sepolia testnet");
     try {
       setLoading(true);
       const tx = await superPayrollContract.cancelPaymentStream(receiver);
@@ -328,8 +332,8 @@ export default function App() {
   };
 
   const handleAddEmployee = async (employeeDetails) => {
-    if (!account || chainId !== 5)
-      return message.error("Connect to goerli testnet");
+    if (!account || chainId !== 11155111)
+      return message.error("Connect to sepolia testnet");
     // check if all fields are filled
     if (
       !["name", "age", "country", "contactAddress", "walletAddress"].every(
@@ -338,13 +342,8 @@ export default function App() {
     )
       return message.error("Please fill all the fields!");
     console.log("employeeDetails: ", employeeDetails);
-    const {
-      name,
-      age,
-      country,
-      contactAddress,
-      walletAddress
-    } = employeeDetails;
+    const { name, age, country, contactAddress, walletAddress } =
+      employeeDetails;
     setLoading(true);
     try {
       const tx = await superPayrollContract.addEmployee(
@@ -365,8 +364,8 @@ export default function App() {
   };
 
   const handleDeleteEmployee = async (addr) => {
-    if (!account || chainId !== 5)
-      return message.error("Connect to goerli testnet");
+    if (!account || chainId !== 11155111)
+      return message.error("Connect to sepolia testnet");
     setLoading(true);
     try {
       const tx = await superPayrollContract.deleteEmployee(addr);
@@ -394,7 +393,7 @@ export default function App() {
           <>
             <Avatar shape="circle" size="small" src={tokenData.icon} />
             <a
-              href={`https://goerli.etherscan.io/token/${token}`}
+              href={`https://sepolia.etherscan.io/token/${token}`}
               target="_blank"
               rel="noreferrer"
               style={{ marginLeft: 10 }}
@@ -412,7 +411,7 @@ export default function App() {
       width: "10%",
       render: ({ sender }) => (
         <a
-          href={`https://goerli.etherscan.io/address/${sender}`}
+          href={`https://sepolia.etherscan.io/address/${sender}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -427,11 +426,13 @@ export default function App() {
       width: "10%",
       render: ({ receiver, to }) => (
         <a
-          href={`https://goerli.etherscan.io/address/${receiver}`}
+          href={`https://sepolia.etherscan.io/address/${receiver}`}
           target="_blank"
           rel="noreferrer"
         >
-          {receiver === account ? `${receiver} (You)` : `${to.name} (${receiver.slice(0, 6)}...${receiver.slice(-6)})`}
+          {receiver === account
+            ? `${receiver} (You)`
+            : `${to.name} (${receiver.slice(0, 6)}...${receiver.slice(-6)})`}
         </a>
       )
     },
@@ -444,9 +445,7 @@ export default function App() {
         // calculate flow rate in tokens per month
         const monthlyFlowRate = calculateFlowRateInTokenPerMonth(flowRate);
         return (
-          <span style={{ color: "#1890ff" }}>
-            {monthlyFlowRate} fDAIx/mo
-          </span>
+          <span style={{ color: "#1890ff" }}>{monthlyFlowRate} fDAIx/mo</span>
         );
       }
     },
@@ -549,7 +548,7 @@ export default function App() {
       ellipsis: true,
       render: ({ addr }) => (
         <a
-          href={`https://goerli.etherscan.io/address/${addr}`}
+          href={`https://sepolia.etherscan.io/address/${addr}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -577,7 +576,12 @@ export default function App() {
                   />
                 </>
               }
-              onConfirm={() => handleCreateStream({ receiver: row.addr, flowRate: updatedFlowRate })}
+              onConfirm={() =>
+                handleCreateStream({
+                  receiver: row.addr,
+                  flowRate: updatedFlowRate
+                })
+              }
             >
               <Button type="primary" shape="circle">
                 <DollarOutlined />
@@ -742,7 +746,7 @@ export default function App() {
                               defaultPageSize: 10,
                               size: "default"
                             }}
-                            onChange={() => { }}
+                            onChange={() => {}}
                           />
                         </>
                       )
@@ -780,7 +784,7 @@ export default function App() {
                               defaultPageSize: 10,
                               size: "default"
                             }}
-                            onChange={() => { }}
+                            onChange={() => {}}
                           />
                         </>
                       )
@@ -806,7 +810,7 @@ export default function App() {
               rel="noopener noreferrer"
             >
               © {new Date().getFullYear()} Salman Dabbakuti. Powered by
-              Superfluid
+              Superfluid & TheGraph
             </a>
           </Footer>
         </Layout>

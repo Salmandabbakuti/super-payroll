@@ -9,7 +9,7 @@
     "deploy:contracts": "npx hardhat deploy",
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.thegraph.com/deploy/ salmandabbakuti/super-payroll",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ super-payroll",
     "create-local": "graph create --node http://localhost:8020/ salmandabbakuti/super-payroll",
     "remove-local": "graph remove --node http://localhost:8020/ salmandabbakuti/super-payroll",
     "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 salmandabbakuti/super-payroll"
@@ -18,13 +18,13 @@
   "author": "Salman Dabbakuti",
   "license": "ISC",
   "dependencies": {
-    "@graphprotocol/graph-cli": "0.39.0",
-    "@graphprotocol/graph-ts": "0.29.1",
-    "dotenv": "^16.0.3"
+    "@graphprotocol/graph-cli": "0.79.0",
+    "@graphprotocol/graph-ts": "0.35.1",
+    "dotenv": "^16.4.5"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^2.0.1",
-    "@superfluid-finance/ethereum-contracts": "^1.5.0",
-    "hardhat": "^2.12.6"
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@superfluid-finance/ethereum-contracts": "^1.10.0",
+    "hardhat": "^2.22.6"
   }
 }
